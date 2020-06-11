@@ -1,19 +1,30 @@
 from copy import deepcopy
+from sets import *
+from math import floor, ceil
+
 class graph:
     
     nodes=[]
+    weights=[]
     numOfNodes=0
     shortestPath=[]
     
     def __init__ (self):
-        return
+        self.nodes=[]
+        self.weights=[]
+        self.numOfNodes=0
+        self.shortestPath=[]
+        return None
     
     #Add a node to the graph. The input is a list of all connected nodes from the current node.
     #Nodes are represented by a node number.
     #Duplicate nodes may not be entered in the list, as paths must be unique.
-    def addNode (self, nodeList):
-        assert (isinstance (nodeList, list))
-        self.nodes.append (nodeList)
+    def addNode (self, neighborList, weight):
+        assert (isinstance (neighborList, list))
+        assert (isinstance (weight, int))
+        assert (isUniqueSet (neighborList))
+        self.nodes.append (neighborList)
+        self.weights.append (weight);
         self.numOfNodes+=1
     
     #Returns a list of all possible groups within the graph.    
@@ -66,18 +77,102 @@ class graph:
                     break
                 array.pop(len(array) - 1)
         return
+    
+    def balanceGraph (self):
+        groups = self.getPossibleGroups()
+        stepCount = 0
+        for group in groups:
+            totalWeight = 0
+            balancedNodeWeight = 0 
+            heaviestNode = 0
+            w = 0
+            for node in group:
+                totalWeight += self.weights[node]
+                if (self.weights[node] > w):
+                    w = self.weights[node]
+                    heaviestNode = node
+            balancedNodeWeight = int(totalWeight / len (group))
+            if (len(group) * balancedNodeWeight != totalWeight):
+                print ("The weights of the nodes " + str(group) + " cannot be evenly balanced.")
+                continue
+            paths = []
+            isBalanced = True
+            v = deepcopy(self.weights)
+            v.sort()
+            if (abs(v[0] - v[len(v) - 1]) > 1):
+                isBalanced = False
+            TEST = 0
+            while (isBalanced == False):
+                if (TEST > 20):
+                    break
+                if (self.numOfNodes <= 1):
+                    break
+                paths = [] 
+                for node in group:
+                    if (self.weights[node] > self.weights[heaviestNode]):
+                        heaviestNode = node
+                for n in group:
+                    if (n == heaviestNode):
+                        continue
+                    else:
+                        paths.append (self.getShortestPath(heaviestNode, n))
+                #print ("paths" + str(paths))
+                i=0
+                for path in paths:
+                    for p in paths:
+                        if (p == path):
+                            continue
+                        else:
+                            if (isSubset(path, p)):
+                                paths.pop(i)
+                                break
+                    i+=1
+                print ("paths " + str(paths))
+                for path in paths:
+                    if (len(path) < 2):
+                        continue
+                    distributionAmount = 0
+                    first = path.pop(0)
+                    #print ("weights: " + str(self.weights))
+                    for neighbor in path:
+                        a = balancedNodeWeight - self.weights[neighbor]
+                        if (a < 0):
+                            a = 0
+                        distributionAmount += a
+                    if (distributionAmount == 0):
+                        continue
+                    lenNeighbors = len(path)
+                    next = path.pop(0)
+                    #print ("heaviest" + str(heaviestNode) + "bnw: " + str(balancedNodeWeight) + "lenNeighbors " + str (lenNeighbors) + "dist: " + str(distributionAmount))
+                    diff = self.weights[first] - distributionAmount
+                    if (diff < balancedNodeWeight):
+                        distributionAmount = self.weights[first] - balancedNodeWeight
+                        diff = balancedNodeWeight
+                    #print (str(distributionAmount) + ", " + str(diff))
+                    self.weights[first] = int (diff)
+                    self.weights[next] = int (self.weights[next] + distributionAmount)
+                    print (self.toString())
+                    stepCount+=1      
+                isBalanced = True
+                v = deepcopy(self.weights)
+                v.sort()
+                if (abs(v[0] - v[len(v) - 1]) > 1):
+                    isBalanced = False
+                TEST+=1
+            print ("The graph has been balanced in " + str(stepCount) + " steps.")
+        return
                
     #Returns a string representation of the graph. Each node is displayed on a separate line with a list
     #of connected nodes following a semicolon.
     def toString(self):
         i=0
         for l in self.nodes:
-            print (str (i) + ": ", end="")
+            print ("[" + str (i) + ", " + str(self.weights[i]) + "]" + ": ", end="")
             i+=1
             j=0
             for node in l:
                     if (j >= len (l) - 1):
-                        print (str (node))
+                        print ("[" + str(node) + ", " + str(self.weights[node]) + "]")
                     else:
-                        print (str (node) + ", ", end="")
+                        print ("[" + str(node) + ", " + str(self.weights[node]) + "]" + ", ", end="")
                     j+=1
