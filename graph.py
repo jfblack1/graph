@@ -1,6 +1,7 @@
 from copy import deepcopy
 from sets import *
 from math import floor, ceil
+from _pydecimal import _Infinity
 
 class graph:
     
@@ -85,26 +86,31 @@ class graph:
             totalWeight = 0
             balancedNodeWeight = 0 
             heaviestNode = 0
+            lightestNode = 0
+            groupWeights = []
             w = 0
+            w2 = _Infinity
             for node in group:
+                groupWeights.append (self.weights[node])
                 totalWeight += self.weights[node]
                 if (self.weights[node] > w):
                     w = self.weights[node]
                     heaviestNode = node
-            balancedNodeWeight = int(totalWeight / len (group))
-            if (len(group) * balancedNodeWeight != totalWeight):
-                print ("The weights of the nodes " + str(group) + " cannot be evenly balanced.")
-                continue
+                if (self.weights[node] < w2):
+                    w2 = self.weights[node]
+                    lightestNode = node
+            balancedNodeWeight = floor(totalWeight / len (group))
+            if (not(len(group) * balancedNodeWeight == totalWeight) and balancedNodeWeight == lightestNode):
+                balancedNodeWeight += 1
             paths = []
             isBalanced = True
-            v = deepcopy(self.weights)
+            v = deepcopy(groupWeights)
             v.sort()
             if (abs(v[0] - v[len(v) - 1]) > 1):
                 isBalanced = False
-            TEST = 0
+            if (isBalanced == True):
+                print (self.toString())
             while (isBalanced == False):
-                if (TEST > 20):
-                    break
                 if (self.numOfNodes <= 1):
                     break
                 paths = [] 
@@ -127,7 +133,7 @@ class graph:
                                 paths.pop(i)
                                 break
                     i+=1
-                print ("paths " + str(paths))
+                #print ("paths " + str(paths))
                 for path in paths:
                     if (len(path) < 2):
                         continue
@@ -154,12 +160,15 @@ class graph:
                     print (self.toString())
                     stepCount+=1      
                 isBalanced = True
-                v = deepcopy(self.weights)
+                groupWeights = []
+                for node in group:
+                    groupWeights.append (self.weights[node])
+                #print (str(groupWeights))
+                v = deepcopy(groupWeights)
                 v.sort()
                 if (abs(v[0] - v[len(v) - 1]) > 1):
                     isBalanced = False
-                TEST+=1
-            print ("The graph has been balanced in " + str(stepCount) + " steps.")
+        print ("The graph has been balanced in " + str(stepCount) + " steps.")
         return
                
     #Returns a string representation of the graph. Each node is displayed on a separate line with a list
